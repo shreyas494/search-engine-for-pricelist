@@ -17,7 +17,7 @@ function App() {
       .catch((err) => console.error("Error fetching data:", err));
   }, []);
 
-  // Filter tyres by search + brand
+  // Filter tyres
   const filteredTyres = tyres.filter((tyre) => {
     const matchesSearch = tyre.model
       .toLowerCase()
@@ -35,16 +35,16 @@ function App() {
         .slice(0, 5)
     : [];
 
-  // Copy tyre details in multi-line format
+  // Copy multi-line details
   const copyTyreDetails = (tyre) => {
     const text = `Brand: ${tyre.brand}
 Model: ${tyre.model}
 Type: ${tyre.type}
 DP: ${tyre.dp}
 MRP: ${tyre.mrp}`;
-    navigator.clipboard.writeText(text)
-      .then(() => alert("Tyre details copied to clipboard ✅"))
-      .catch((err) => console.error("Failed to copy:", err));
+    navigator.clipboard.writeText(text).then(() =>
+      alert("Tyre details copied to clipboard ✅")
+    );
   };
 
   return (
@@ -52,7 +52,6 @@ MRP: ${tyre.mrp}`;
       <h1 className="text-2xl font-bold mb-6">Tyre Inventory</h1>
 
       <div className="flex flex-col md:flex-row gap-4 mb-6">
-        {/* Search with autocomplete */}
         <div className="relative w-full md:w-1/2">
           <input
             type="text"
@@ -76,7 +75,6 @@ MRP: ${tyre.mrp}`;
           )}
         </div>
 
-        {/* Brand Filter */}
         <select
           className="p-2 border rounded-lg md:w-1/4"
           value={brandFilter}
@@ -91,7 +89,6 @@ MRP: ${tyre.mrp}`;
         </select>
       </div>
 
-      {/* Tyres Table */}
       <div className="overflow-x-auto bg-white shadow rounded-lg">
         <table className="min-w-full border border-gray-200">
           <thead className="bg-gray-100">
@@ -125,7 +122,10 @@ MRP: ${tyre.mrp}`;
               ))
             ) : (
               <tr>
-                <td colSpan="6" className="border p-2 text-center text-gray-500">
+                <td
+                  colSpan="6"
+                  className="border p-2 text-center text-gray-500"
+                >
                   No tyres found
                 </td>
               </tr>
