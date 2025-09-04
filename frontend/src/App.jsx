@@ -5,37 +5,48 @@ function App() {
   const [searchTerm, setSearchTerm] = useState("");
   const [brandFilter, setBrandFilter] = useState("");
   const [brands, setBrands] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
 
+  // ✅ Fetch unique brands once for dropdown
   useEffect(() => {
     fetch("/api/tyres")
       .then((res) => res.json())
       .then((data) => {
-        setTyres(data);
         const uniqueBrands = [...new Set(data.map((t) => t.brand))];
         setBrands(uniqueBrands);
       })
-      .catch((err) => console.error("Error fetching data:", err));
+      .catch((err) => console.error("Error fetching brands:", err));
   }, []);
 
-  // Filter tyres
-  const filteredTyres = tyres.filter((tyre) => {
-    const matchesSearch = tyre.model
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchesBrand = brandFilter ? tyre.brand === brandFilter : true;
-    return matchesSearch && matchesBrand;
-  });
+  // ✅ Fetch tyres whenever brand or search changes
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (brandFilter) params.append("brand", brandFilter);
+    if (searchTerm) params.append("search", searchTerm);
 
-  // Autocomplete suggestions
-  const suggestions = searchTerm
-    ? tyres
-        .filter((tyre) =>
-          tyre.model.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-        .slice(0, 5)
-    : [];
+    fetch(`/api/tyres?${params.toString()}`)
+      .then((res) => res.json())
+      .then((data) => setTyres(data))
+      .catch((err) => console.error("Error fetching tyres:", err));
+  }, [brandFilter, searchTerm]);
 
-  // Copy multi-line details
+  // ✅ Autocomplete (query backend)
+  useEffect(() => {
+    if (!searchTerm) {
+      setSuggestions([]);
+      return;
+    }
+    const params = new URLSearchParams();
+    if (brandFilter) params.append("brand", brandFilter);
+    params.append("search", searchTerm);
+
+    fetch(`/api/tyres?${params.toString()}`)
+      .then((res) => res.json())
+      .then((data) => setSuggestions(data.slice(0, 5)))
+      .catch((err) => console.error("Error fetching suggestions:", err));
+  }, [searchTerm, brandFilter]);
+
+  // ✅ Copy details
   const copyTyreDetails = (tyre) => {
     const text = `Brand: ${tyre.brand}
 Model: ${tyre.model}
@@ -51,6 +62,7 @@ MRP: ${tyre.mrp}`;
     <div className="p-6 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-bold mb-6">Tyre Inventory</h1>
 
+      {/* 🔎 Search + Brand Filter */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="relative w-full md:w-1/2">
           <input
@@ -89,6 +101,7 @@ MRP: ${tyre.mrp}`;
         </select>
       </div>
 
+      {/* 📋 Tyre Table */}
       <div className="overflow-x-auto bg-white shadow rounded-lg">
         <table className="min-w-full border border-gray-200">
           <thead className="bg-gray-100">
@@ -102,8 +115,8 @@ MRP: ${tyre.mrp}`;
             </tr>
           </thead>
           <tbody>
-            {filteredTyres.length > 0 ? (
-              filteredTyres.map((tyre) => (
+            {tyres.length > 0 ? (
+              tyres.map((tyre) => (
                 <tr key={tyre._id} className="hover:bg-gray-50">
                   <td className="border p-2">{tyre.brand}</td>
                   <td className="border p-2">{tyre.model}</td>
