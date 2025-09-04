@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// ✅ MongoDB Connection (use environment variable)
+// ✅ MongoDB Connection
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("Connected to tyreDB ✅"))
@@ -23,7 +23,7 @@ const TyreSchema = new mongoose.Schema(
   {
     brand: String,
     model: String,
-    type: String, // changed from category to type
+    type: String,
     dp: Number,
     mrp: Number,
   },
@@ -32,7 +32,7 @@ const TyreSchema = new mongoose.Schema(
 
 const Tyre = mongoose.model("Tyre", TyreSchema);
 
-// ✅ Get all tyres with optional filters
+// ✅ Get tyres with optional filters
 app.get("/api/tyres", async (req, res) => {
   try {
     const { search, brand } = req.query;
@@ -41,7 +41,7 @@ app.get("/api/tyres", async (req, res) => {
     if (brand) filter.brand = brand;
     if (search) filter.model = { $regex: search, $options: "i" };
 
-    const tyres = await Tyre.find(filter);
+    const tyres = await Tyre.find(filter).limit(100); // safety limit
     res.json(tyres);
   } catch (err) {
     res.status(500).json({ error: err.message });
