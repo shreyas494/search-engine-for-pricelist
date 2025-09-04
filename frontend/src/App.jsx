@@ -7,18 +7,15 @@ function App() {
   const [brands, setBrands] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
 
-  // ✅ Fetch unique brands once for dropdown
+  // ✅ Fetch brands for dropdown
   useEffect(() => {
-    fetch("/api/tyres")
+    fetch("/api/brands")
       .then((res) => res.json())
-      .then((data) => {
-        const uniqueBrands = [...new Set(data.map((t) => t.brand))];
-        setBrands(uniqueBrands);
-      })
+      .then((data) => setBrands(data))
       .catch((err) => console.error("Error fetching brands:", err));
   }, []);
 
-  // ✅ Fetch tyres whenever brand or search changes
+  // ✅ Fetch tyres when brand/search changes
   useEffect(() => {
     const params = new URLSearchParams();
     if (brandFilter) params.append("brand", brandFilter);
@@ -30,7 +27,7 @@ function App() {
       .catch((err) => console.error("Error fetching tyres:", err));
   }, [brandFilter, searchTerm]);
 
-  // ✅ Autocomplete (query backend)
+  // ✅ Autocomplete suggestions
   useEffect(() => {
     if (!searchTerm) {
       setSuggestions([]);

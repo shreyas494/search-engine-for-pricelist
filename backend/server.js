@@ -15,8 +15,8 @@ app.use(express.json());
 // ✅ MongoDB Connection
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("Connected to tyreDB ✅"))
-  .catch((err) => console.error("DB Connection Error ❌:", err));
+  .then(() => console.log("✅ Connected to MongoDB"))
+  .catch((err) => console.error("❌ DB Connection Error:", err));
 
 // ✅ Tyre Schema
 const TyreSchema = new mongoose.Schema(
@@ -41,8 +41,18 @@ app.get("/api/tyres", async (req, res) => {
     if (brand) filter.brand = brand;
     if (search) filter.model = { $regex: search, $options: "i" };
 
-    const tyres = await Tyre.find(filter).limit(100); // safety limit
+    const tyres = await Tyre.find(filter);
     res.json(tyres);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ✅ Get unique brands
+app.get("/api/brands", async (req, res) => {
+  try {
+    const brands = await Tyre.distinct("brand");
+    res.json(brands);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
