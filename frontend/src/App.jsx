@@ -14,23 +14,29 @@ function App() {
 
   const fetchTyres = async () => {
     try {
-      // Send 'stabilizer' lowercase for type, matching DB field "stabilizer"
-      const type =
-        selectedBrand === "AUTOMATIC_VOLTAGE_STABILIZER" ? "stabilizer" : undefined;
+      // When searching by model, ignore brand/type filters to avoid conflicts
+      let brandParam = selectedBrand;
+      let typeParam;
+
+      if (searchTerm.length > 0) {
+        brandParam = undefined;
+        typeParam = undefined;
+      } else if (selectedBrand === "AUTOMATIC_VOLTAGE_STABILIZER") {
+        // Use exact case as in DB
+        typeParam = "STABILIZER";
+      }
 
       const res = await axios.get("http://localhost:5000/api/tyres", {
-        params: { brand: selectedBrand, type, search: searchTerm },
+        params: { brand: brandParam, type: typeParam, search: searchTerm },
       });
 
       setTyres(res.data);
 
-      // Populate brands dropdown only once
       if (brands.length === 0) {
         const uniqueBrands = [...new Set(res.data.map((t) => t.brand))];
         setBrands(uniqueBrands);
       }
 
-      // Autocomplete suggestions based on model partial search
       if (searchTerm.length > 0) {
         const matches = res.data.filter((t) =>
           t.model.toLowerCase().includes(searchTerm.toLowerCase())
@@ -49,7 +55,6 @@ function App() {
       <h1 className="text-2xl font-bold mb-4">Tyre & Stabilizer Inventory</h1>
 
       <div className="flex gap-4 mb-6">
-        {/* Search Bar */}
         <div className="relative w-1/2">
           <input
             type="text"
@@ -77,7 +82,6 @@ function App() {
           )}
         </div>
 
-        {/* Brand Dropdown */}
         <select
           value={selectedBrand}
           onChange={(e) => setSelectedBrand(e.target.value)}
@@ -92,7 +96,6 @@ function App() {
         </select>
       </div>
 
-      {/* Tyres Table */}
       <table className="w-full border">
         <thead>
           <tr className="bg-gray-200">
