@@ -9,7 +9,6 @@ function App() {
   const [suggestions, setSuggestions] = useState([]);
   const debounceRef = useRef(null);
 
-  // Fetch tyre list initially and when brand changes (without search)
   useEffect(() => {
     fetchTyres(selectedBrand);
     setSearchTerm("");
@@ -18,18 +17,16 @@ function App() {
 
   const fetchTyres = async (brand = "", search = "") => {
     try {
-      const type = brand === "AUTOMATIC_VOLTAGE_STABILIZER" ? "STABILIZER" : undefined;
-      const params = {
-        brand: brand || undefined,
-        type,
-        search: search || undefined,
-      };
+      const params = {};
+      if (brand) params.brand = brand;
+      if (search) params.search = search;
 
       const res = await axios.get("http://localhost:5000/api/tyres", { params });
       setTyres(res.data);
 
       if (brands.length === 0 && res.data.length > 0) {
-        setBrands([...new Set(res.data.map(t => t.brand))]);
+        const uniqueBrands = [...new Set(res.data.map(t => t.brand))];
+        setBrands(uniqueBrands);
       }
     } catch (error) {
       console.error(error);
@@ -43,11 +40,11 @@ function App() {
     }
 
     try {
-      const type = selectedBrand === "AUTOMATIC_VOLTAGE_STABILIZER" ? "STABILIZER" : undefined;
-      const params = { search: input, brand: selectedBrand || undefined, type };
+      const params = { search: input };
+      if (selectedBrand) params.brand = selectedBrand;
+
       const res = await axios.get("http://localhost:5000/api/tyres", { params });
 
-      // Extract unique model suggestions
       const models = Array.from(new Set(res.data.map(t => t.model)));
       setSuggestions(models.slice(0, 5));
     } catch (error) {
@@ -63,17 +60,16 @@ function App() {
     debounceRef.current = setTimeout(() => fetchSuggestions(val), 300);
   };
 
-  // On suggestion select: fetch tyres by exact model, clearing brand/type filters
   const onSelectSuggestion = (model) => {
     setSearchTerm(model);
     setSuggestions([]);
-    fetchTyres("", model);
-    setSelectedBrand(""); 
+    fetchTyres("", model); // search by model only, no brand filter
+    setSelectedBrand("");
   };
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Tyre & Stabilizer Inventory</h1>
+      <h1 className="text-2xl font-bold mb-4">Tyre Inventory</h1>
 
       <div className="flex gap-4 mb-6">
         <div className="relative w-1/2">
