@@ -16,7 +16,7 @@ mongoose
   .catch((err) => console.error(err));
 
 // Schema
-const itemSchema = new mongoose.Schema({
+const tyreSchema = new mongoose.Schema({
   brand: String,
   model: String,
   type: String,
@@ -24,21 +24,23 @@ const itemSchema = new mongoose.Schema({
   mrp: Number,
 });
 
-const Item = mongoose.model("Item", itemSchema);
+const Tyre = mongoose.model("Tyre", tyreSchema);
 
-// API to fetch items with optional filters
-app.get("/api/items", async (req, res) => {
+// API to fetch tyres with filters
+app.get("/api/tyres", async (req, res) => {
   try {
     const { brand, type, search } = req.query;
-    const query = {};
 
-    // Case-insensitive regex for brand/type/model
-    if (brand) query.brand = { $regex: new RegExp(brand, "i") };
-    if (type) query.type = { $regex: new RegExp(type, "i") };
-    if (search) query.model = { $regex: new RegExp(search, "i") };
+    let query = {};
 
-    const items = await Item.find(query); // no limit
-    res.json(items);
+    if (brand) query.brand = { $regex: new RegExp(`^${brand}$`, "i") }; // exact match, case-insensitive
+    if (type) query.type = { $regex: new RegExp(`^${type}$`, "i") };     // exact match, case-insensitive
+    if (search) query.model = { $regex: search, $options: "i" };         // partial match
+
+    console.log("Backend Query:", query); // 🔥 debug
+
+    const tyres = await Tyre.find(query);
+    res.json(tyres);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
