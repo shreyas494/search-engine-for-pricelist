@@ -48,10 +48,11 @@ function App() {
       </h1>
 
       <form autoComplete="off" style={{ position: "relative" }}>
+        {/* Search Input with Chrome autocomplete disabled */}
         <input
-          type="text"
-          name="search_model_unique"
-          autoComplete="new-password" // trick to disable Chrome suggestions
+          type="search"
+          name="disable_autofill_" // random dummy name
+          autoComplete="off"
           aria-autocomplete="none"
           autoCorrect="off"
           autoCapitalize="off"
@@ -63,6 +64,7 @@ function App() {
           key="search-input"
         />
 
+        {/* Brand Dropdown */}
         <select
           value={selectedBrand}
           onChange={(e) => setSelectedBrand(e.target.value)}
@@ -77,6 +79,7 @@ function App() {
         </select>
       </form>
 
+      {/* Results Table */}
       <table className="w-full border mt-6">
         <thead>
           <tr className="bg-gray-200">
