@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// MongoDB connection
+// MongoDB connection (replace YOUR_MONGO_ATLAS_URL with actual URL)
 mongoose
   .connect("YOUR_MONGO_ATLAS_URL", {
     useNewUrlParser: true,
@@ -37,7 +37,7 @@ app.get("/api/tyres", async (req, res) => {
     if (type) query.type = { $regex: new RegExp(`^${type}$`, "i") };     // exact match, case-insensitive
     if (search) query.model = { $regex: search, $options: "i" };         // partial match
 
-    console.log("Backend Query:", query); // 🔥 debug
+    console.log("Backend Query:", query); // Debug log
 
     const tyres = await Tyre.find(query);
     res.json(tyres);
