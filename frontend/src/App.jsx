@@ -14,11 +14,8 @@ function App() {
 
   const fetchTyres = async () => {
     try {
-      // Fix here: send 'stabilizer' lowercase matching your DB type field
       const type =
-        selectedBrand === "AUTOMATIC_VOLTAGE_STABILIZER"
-          ? "stabilizer"
-          : undefined;
+        selectedBrand === "AUTOMATIC_VOLTAGE_STABILIZER" ? "STABILIZER" : undefined;
 
       const res = await axios.get("http://localhost:5000/api/tyres", {
         params: { brand: selectedBrand, type, search: searchTerm },
@@ -26,13 +23,13 @@ function App() {
 
       setTyres(res.data);
 
-      // Populate brands dropdown once
+      // Populate brand dropdown only once
       if (brands.length === 0) {
         const uniqueBrands = [...new Set(res.data.map((t) => t.brand))];
         setBrands(uniqueBrands);
       }
 
-      // Autocomplete suggestions based on model search
+      // Autocomplete suggestions
       if (searchTerm.length > 0) {
         const matches = res.data.filter((t) =>
           t.model.toLowerCase().includes(searchTerm.toLowerCase())
