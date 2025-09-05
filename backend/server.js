@@ -16,7 +16,7 @@ mongoose
   .catch((err) => console.error(err));
 
 // Schema
-const tyreSchema = new mongoose.Schema({
+const itemSchema = new mongoose.Schema({
   brand: String,
   model: String,
   type: String,
@@ -24,21 +24,21 @@ const tyreSchema = new mongoose.Schema({
   mrp: Number,
 });
 
-const Tyre = mongoose.model("Tyre", tyreSchema);
+const Item = mongoose.model("Item", itemSchema);
 
-// API to fetch tyres with filters
-app.get("/api/tyres", async (req, res) => {
+// API to fetch items with optional filters
+app.get("/api/items", async (req, res) => {
   try {
-    const { brand, search } = req.query;
-    let query = {};
+    const { brand, type, search } = req.query;
+    const query = {};
 
-    if (brand) query.brand = brand;
-    if (search) {
-      query.model = { $regex: search, $options: "i" }; // 👈 case-insensitive search
-    }
+    // Case-insensitive regex for brand/type/model
+    if (brand) query.brand = { $regex: new RegExp(brand, "i") };
+    if (type) query.type = { $regex: new RegExp(type, "i") };
+    if (search) query.model = { $regex: new RegExp(search, "i") };
 
-    const tyres = await Tyre.find(query).limit(50);
-    res.json(tyres);
+    const items = await Item.find(query); // no limit
+    res.json(items);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -46,4 +46,3 @@ app.get("/api/tyres", async (req, res) => {
 
 const PORT = 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-  

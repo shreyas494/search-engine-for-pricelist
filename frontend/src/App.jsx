@@ -41,19 +41,15 @@ function App() {
     fetchItems();
   }, [selectedBrand, selectedType, searchTerm]);
 
-  // Fetch autocomplete suggestions
+  // Fetch autocomplete suggestions dynamically
   useEffect(() => {
     const fetchSuggestions = async () => {
-      if (searchTerm.length === 0) {
-        setSuggestions([]);
-        return;
-      }
-
+      if (searchTerm.length === 0) return setSuggestions([]);
       try {
         const res = await axios.get("http://localhost:5000/api/items", {
           params: { brand: selectedBrand, type: selectedType, search: searchTerm },
         });
-        setSuggestions(res.data.slice(0, 5)); // top 5 matches
+        setSuggestions(res.data.slice(0, 5)); // top 5 suggestions
       } catch (err) {
         console.error(err);
       }
@@ -111,7 +107,7 @@ function App() {
                   className="p-2 hover:bg-gray-100 cursor-pointer"
                   onClick={() => {
                     setSearchTerm(item.model);
-                    setItems([item]); // display selected item in table
+                    setItems([item]); // show selected item in table
                     setSuggestions([]); // close dropdown
                   }}
                 >
