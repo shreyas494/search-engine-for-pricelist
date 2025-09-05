@@ -2,78 +2,70 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 function App() {
-  const [tyres, setTyres] = useState([]);
+  const [items, setItems] = useState([]);
   const [brands, setBrands] = useState([]);
+  const [types, setTypes] = useState([]);
   const [selectedBrand, setSelectedBrand] = useState("");
+  const [selectedType, setSelectedType] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [suggestions, setSuggestions] = useState([]);
 
+  // Fetch brands and types once on mount
   useEffect(() => {
-    fetchTyres();
-  }, [selectedBrand, searchTerm]);
+    const fetchFilters = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/api/items");
+        const allItems = res.data;
 
-  const fetchTyres = async () => {
-    try {
-      const res = await axios.get("http://localhost:5000/api/tyres", {
-        params: { brand: selectedBrand, search: searchTerm },
-      });
-      setTyres(res.data);
-
-      // Populate brand dropdown
-      if (brands.length === 0) {
-        const uniqueBrands = [
-          ...new Set(res.data.map((tyre) => tyre.brand)),
-        ];
-        setBrands(uniqueBrands);
+        setBrands([...new Set(allItems.map((item) => item.brand))]);
+        setTypes([...new Set(allItems.map((item) => item.type))]);
+      } catch (err) {
+        console.error(err);
       }
+    };
+    fetchFilters();
+  }, []);
 
-      // Autocomplete suggestions
-      if (searchTerm.length > 0) {
-        const matches = res.data.filter((tyre) =>
-          tyre.model.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        setSuggestions(matches.slice(0, 5));
-      } else {
+  // Fetch table items whenever filters change
+  useEffect(() => {
+    const fetchItems = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/api/items", {
+          params: { brand: selectedBrand, type: selectedType, search: searchTerm },
+        });
+        setItems(res.data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchItems();
+  }, [selectedBrand, selectedType, searchTerm]);
+
+  // Fetch autocomplete suggestions
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (searchTerm.length === 0) {
         setSuggestions([]);
+        return;
       }
-    } catch (err) {
-      console.error(err);
-    }
-  };
+
+      try {
+        const res = await axios.get("http://localhost:5000/api/items", {
+          params: { brand: selectedBrand, type: selectedType, search: searchTerm },
+        });
+        setSuggestions(res.data.slice(0, 5)); // top 5 matches
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchSuggestions();
+  }, [searchTerm, selectedBrand, selectedType]);
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Tyre Inventory</h1>
+      <h1 className="text-2xl font-bold mb-4">Inventory</h1>
 
       <div className="flex gap-4 mb-6">
-        {/* Search Bar */}
-        <div className="relative w-1/2">
-          <input
-            type="text"
-            placeholder="Search by model..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border p-2 rounded w-full"
-          />
-          {suggestions.length > 0 && (
-            <ul className="absolute bg-white border w-full mt-1 rounded shadow-lg z-10">
-              {suggestions.map((tyre) => (
-                <li
-                  key={tyre._id}
-                  className="p-2 hover:bg-gray-100 cursor-pointer"
-                  onClick={() => {
-                    setSearchTerm(tyre.model);
-                    setTyres([tyre]); // 👈 instantly show clicked item
-                    setSuggestions([]); // close dropdown
-                  }}
-                >
-                  {tyre.model}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
         {/* Brand Dropdown */}
         <select
           value={selectedBrand}
@@ -87,6 +79,48 @@ function App() {
             </option>
           ))}
         </select>
+
+        {/* Type Dropdown */}
+        <select
+          value={selectedType}
+          onChange={(e) => setSelectedType(e.target.value)}
+          className="border p-2 rounded"
+        >
+          <option value="">All Types</option>
+          {types.map((type, i) => (
+            <option key={i} value={type}>
+              {type}
+            </option>
+          ))}
+        </select>
+
+        {/* Search Bar */}
+        <div className="relative w-1/2">
+          <input
+            type="text"
+            placeholder="Search by model..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="border p-2 rounded w-full"
+          />
+          {suggestions.length > 0 && (
+            <ul className="absolute bg-white border w-full mt-1 rounded shadow-lg z-10">
+              {suggestions.map((item) => (
+                <li
+                  key={item._id}
+                  className="p-2 hover:bg-gray-100 cursor-pointer"
+                  onClick={() => {
+                    setSearchTerm(item.model);
+                    setItems([item]); // display selected item in table
+                    setSuggestions([]); // close dropdown
+                  }}
+                >
+                  {item.model}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
       {/* Table */}
@@ -102,27 +136,35 @@ function App() {
           </tr>
         </thead>
         <tbody>
-          {tyres.map((tyre) => (
-            <tr key={tyre._id}>
-              <td className="border p-2">{tyre.brand}</td>
-              <td className="border p-2">{tyre.model}</td>
-              <td className="border p-2">{tyre.type}</td>
-              <td className="border p-2">{tyre.dp}</td>
-              <td className="border p-2">{tyre.mrp}</td>
-              <td className="border p-2">
-                <button
-                  onClick={() =>
-                    navigator.clipboard.writeText(
-                      `${tyre.brand} - ${tyre.model} - DP:${tyre.dp} - MRP:${tyre.mrp}`
-                    )
-                  }
-                  className="bg-blue-500 text-white px-2 py-1 rounded"
-                >
-                  Copy
-                </button>
+          {items.length > 0 ? (
+            items.map((item) => (
+              <tr key={item._id}>
+                <td className="border p-2">{item.brand}</td>
+                <td className="border p-2">{item.model}</td>
+                <td className="border p-2">{item.type}</td>
+                <td className="border p-2">{item.dp}</td>
+                <td className="border p-2">{item.mrp}</td>
+                <td className="border p-2">
+                  <button
+                    onClick={() =>
+                      navigator.clipboard.writeText(
+                        `${item.brand} - ${item.model} - DP:${item.dp} - MRP:${item.mrp}`
+                      )
+                    }
+                    className="bg-blue-500 text-white px-2 py-1 rounded"
+                  >
+                    Copy
+                  </button>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="6" className="text-center p-4">
+                Data not found
               </td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
     </div>
