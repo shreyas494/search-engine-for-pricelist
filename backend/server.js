@@ -1,74 +1,48 @@
-// server.js
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
-import path from "path";
-import { fileURLToPath } from "url";
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-
-// ✅ Middleware
 app.use(cors());
 app.use(express.json());
 
-// ✅ MongoDB Connection
+// MongoDB connection
 mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ Connected to MongoDB"))
-  .catch((err) => console.error("❌ DB Connection Error:", err));
+  .connect("YOUR_MONGO_ATLAS_URL", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => console.error(err));
 
-// ✅ Tyre Schema
-const TyreSchema = new mongoose.Schema(
-  {
-    brand: String,
-    model: String,
-    type: String,
-    dp: Number,
-    mrp: Number,
-  },
-  { collection: "tyres" }
-);
+// Schema
+const tyreSchema = new mongoose.Schema({
+  brand: String,
+  model: String,
+  type: String,
+  dp: Number,
+  mrp: Number,
+});
 
-const Tyre = mongoose.model("Tyre", TyreSchema);
+const Tyre = mongoose.model("Tyre", tyreSchema);
 
-// ✅ Get tyres with optional filters
+// API to fetch tyres with filters
 app.get("/api/tyres", async (req, res) => {
   try {
-    const { search, brand } = req.query;
+    const { brand, search } = req.query;
+    let query = {};
 
-    let filter = {};
-    if (brand) filter.brand = brand;
-    if (search) filter.model = { $regex: search, $options: "i" };
+    if (brand) query.brand = brand;
+    if (search) {
+      query.model = { $regex: search, $options: "i" }; // 👈 case-insensitive search
+    }
 
-    const tyres = await Tyre.find(filter);
+    const tyres = await Tyre.find(query).limit(50);
     res.json(tyres);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// ✅ Get unique brands
-app.get("/api/brands", async (req, res) => {
-  try {
-    const brands = await Tyre.distinct("brand");
-    res.json(brands);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ✅ Serve frontend build
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-app.use(express.static(path.join(__dirname, "../frontend/dist")));
-
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
-});
-
-// ✅ Start server
-app.listen(PORT, () =>
-  console.log(`🚀 Server running on http://localhost:${PORT}`)
-);
+const PORT = 5000;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
