@@ -9,7 +9,6 @@ function App() {
   const debounceRef = useRef(null);
 
   useEffect(() => {
-    // Fetch all tyres or filtered by brand on brand change without search term
     if (searchTerm.trim() === "") {
       fetchTyres(selectedBrand, "");
     }
@@ -46,14 +45,21 @@ function App() {
     <div className="p-6 max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Tyre Inventory - Real-time Search</h1>
 
-      <form autoComplete="off">
-        {/* Hidden input to fool browser autocomplete */}
+      <form autoComplete="off" style={{ position: "relative" }}>
+        {/* Hidden inputs to trick browsers */}
         <input
           type="text"
+          name="fakeusernameremembered"
           autoComplete="off"
           style={{ display: "none" }}
-          tabIndex={-1}
         />
+        <input
+          type="password"
+          name="fakepasswordremembered"
+          autoComplete="new-password"
+          style={{ display: "none" }}
+        />
+
         <input
           type="text"
           name="search_model_unique"
@@ -63,7 +69,10 @@ function App() {
           value={searchTerm}
           onChange={onSearchChange}
           className="border p-2 rounded w-1/2"
+          // optionally add key to force React to remount on input reset:
+          key="search-input"
         />
+
         <select
           value={selectedBrand}
           onChange={(e) => setSelectedBrand(e.target.value)}
