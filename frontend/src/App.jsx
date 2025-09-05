@@ -6,95 +6,60 @@ function App() {
   const [brands, setBrands] = useState([]);
   const [selectedBrand, setSelectedBrand] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [suggestions, setSuggestions] = useState([]);
   const debounceRef = useRef(null);
 
   useEffect(() => {
-    fetchTyres(selectedBrand);
-    setSearchTerm("");
-    setSuggestions([]);
+    // Fetch all tyres initially or when brand filter changes (and no search)
+    if (searchTerm.trim() === "") {
+      fetchTyres(selectedBrand, "");
+    }
   }, [selectedBrand]);
 
   const fetchTyres = async (brand = "", search = "") => {
     try {
-      const params = {};
-      if (brand) params.brand = brand;
-      if (search) params.search = search;
+      const type = brand === "AUTOMATIC_VOLTAGE_STABILIZER" ? "STABILIZER" : undefined;
+      const params = {
+        brand: brand || undefined,
+        type,
+        search: search || undefined,
+      };
 
       const res = await axios.get("http://localhost:5000/api/tyres", { params });
       setTyres(res.data);
 
       if (brands.length === 0 && res.data.length > 0) {
-        const uniqueBrands = [...new Set(res.data.map(t => t.brand))];
-        setBrands(uniqueBrands);
+        setBrands([...new Set(res.data.map(t => t.brand))]);
       }
     } catch (error) {
       console.error(error);
     }
   };
 
-  const fetchSuggestions = async (input) => {
-    if (!input) {
-      setSuggestions([]);
-      return;
-    }
-
-    try {
-      const params = { search: input };
-      if (selectedBrand) params.brand = selectedBrand;
-
-      const res = await axios.get("http://localhost:5000/api/tyres", { params });
-
-      const models = Array.from(new Set(res.data.map(t => t.model)));
-      setSuggestions(models.slice(0, 5));
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
   const onSearchChange = (e) => {
-    const val = e.target.value;
-    setSearchTerm(val);
+    const value = e.target.value;
+    setSearchTerm(value);
 
+    // Debounce API calls so they aren't called on every keystroke immediately
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => fetchSuggestions(val), 300);
-  };
-
-  const onSelectSuggestion = (model) => {
-    setSearchTerm(model);
-    setSuggestions([]);
-    fetchTyres("", model); // search by model only, no brand filter
-    setSelectedBrand("");
+    debounceRef.current = setTimeout(() => {
+      fetchTyres(selectedBrand, value);
+    }, 300);
   };
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Tyre Inventory</h1>
+      <h1 className="text-2xl font-bold mb-4">Tyre Inventory - Real-time Search</h1>
 
       <div className="flex gap-4 mb-6">
-        <div className="relative w-1/2">
-          <input
-            type="text"
-            placeholder="Search by model..."
-            value={searchTerm}
-            onChange={onSearchChange}
-            className="border p-2 rounded w-full"
-            autoComplete="off"
-          />
-          {suggestions.length > 0 && (
-            <ul className="absolute bg-white border w-full mt-1 rounded shadow-lg z-10 max-h-48 overflow-auto">
-              {suggestions.map((model, i) => (
-                <li
-                  key={i}
-                  className="p-2 hover:bg-gray-100 cursor-pointer"
-                  onClick={() => onSelectSuggestion(model)}
-                >
-                  {model}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <input
+          type="text"
+          placeholder="Type to search by model..."
+          value={searchTerm}
+          onChange={onSearchChange}
+          className="border p-2 rounded w-1/2"
+          autoComplete="off"
+        />
+
         <select
           value={selectedBrand}
           onChange={(e) => setSelectedBrand(e.target.value)}
