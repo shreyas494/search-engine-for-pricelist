@@ -9,7 +9,7 @@ function App() {
   const debounceRef = useRef(null);
 
   useEffect(() => {
-    // Fetch all tyres initially or when brand filter changes (and no search)
+    // Fetch all tyres or filtered by brand on brand change without search term
     if (searchTerm.trim() === "") {
       fetchTyres(selectedBrand, "");
     }
@@ -17,18 +17,15 @@ function App() {
 
   const fetchTyres = async (brand = "", search = "") => {
     try {
-      const type = brand === "AUTOMATIC_VOLTAGE_STABILIZER" ? "STABILIZER" : undefined;
-      const params = {
-        brand: brand || undefined,
-        type,
-        search: search || undefined,
-      };
+      const params = {};
+      if (brand) params.brand = brand;
+      if (search) params.search = search;
 
       const res = await axios.get("http://localhost:5000/api/tyres", { params });
       setTyres(res.data);
 
       if (brands.length === 0 && res.data.length > 0) {
-        setBrands([...new Set(res.data.map(t => t.brand))]);
+        setBrands([...new Set(res.data.map((t) => t.brand))]);
       }
     } catch (error) {
       console.error(error);
@@ -36,13 +33,12 @@ function App() {
   };
 
   const onSearchChange = (e) => {
-    const value = e.target.value;
-    setSearchTerm(value);
+    const val = e.target.value;
+    setSearchTerm(val);
 
-    // Debounce API calls so they aren't called on every keystroke immediately
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      fetchTyres(selectedBrand, value);
+      fetchTyres(selectedBrand, val);
     }, 300);
   };
 
@@ -50,20 +46,28 @@ function App() {
     <div className="p-6 max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Tyre Inventory - Real-time Search</h1>
 
-      <div className="flex gap-4 mb-6">
+      <form autoComplete="off">
+        {/* Hidden input to fool browser autocomplete */}
         <input
           type="text"
+          autoComplete="off"
+          style={{ display: "none" }}
+          tabIndex={-1}
+        />
+        <input
+          type="text"
+          name="search_model_unique"
+          autoComplete="off"
+          spellCheck="false"
           placeholder="Type to search by model..."
           value={searchTerm}
           onChange={onSearchChange}
           className="border p-2 rounded w-1/2"
-          autoComplete="off"
         />
-
         <select
           value={selectedBrand}
           onChange={(e) => setSelectedBrand(e.target.value)}
-          className="border p-2 rounded"
+          className="border p-2 rounded ml-4"
         >
           <option value="">All Brands</option>
           {brands.map((b, i) => (
@@ -72,9 +76,9 @@ function App() {
             </option>
           ))}
         </select>
-      </div>
+      </form>
 
-      <table className="w-full border">
+      <table className="w-full border mt-6">
         <thead>
           <tr className="bg-gray-200">
             <th className="border p-2">Brand</th>
@@ -110,7 +114,7 @@ function App() {
             ))
           ) : (
             <tr>
-              <td className="border p-2 text-center" colSpan={6}>
+              <td colSpan={6} className="border p-2 text-center">
                 Data not found
               </td>
             </tr>
