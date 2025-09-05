@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 
 function App() {
@@ -7,51 +7,72 @@ function App() {
   const [selectedBrand, setSelectedBrand] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [suggestions, setSuggestions] = useState([]);
+  const debounceRef = useRef(null);
 
+  // Fetch tyre list initially and when brand changes (without search)
   useEffect(() => {
-    fetchTyres();
-  }, [selectedBrand, searchTerm]);
+    fetchTyres(selectedBrand);
+    setSearchTerm("");
+    setSuggestions([]);
+  }, [selectedBrand]);
 
-  const fetchTyres = async () => {
+  const fetchTyres = async (brand = "", search = "") => {
     try {
-      // When searching by model, ignore brand/type filters to avoid conflicts
-      let brandParam = selectedBrand;
-      let typeParam;
+      const type = brand === "AUTOMATIC_VOLTAGE_STABILIZER" ? "STABILIZER" : undefined;
+      const params = {
+        brand: brand || undefined,
+        type,
+        search: search || undefined,
+      };
 
-      if (searchTerm.length > 0) {
-        brandParam = undefined;
-        typeParam = undefined;
-      } else if (selectedBrand === "AUTOMATIC_VOLTAGE_STABILIZER") {
-        // Use exact case as in DB
-        typeParam = "STABILIZER";
-      }
-
-      const res = await axios.get("http://localhost:5000/api/tyres", {
-        params: { brand: brandParam, type: typeParam, search: searchTerm },
-      });
-
+      const res = await axios.get("http://localhost:5000/api/tyres", { params });
       setTyres(res.data);
 
-      if (brands.length === 0) {
-        const uniqueBrands = [...new Set(res.data.map((t) => t.brand))];
-        setBrands(uniqueBrands);
+      if (brands.length === 0 && res.data.length > 0) {
+        setBrands([...new Set(res.data.map(t => t.brand))]);
       }
-
-      if (searchTerm.length > 0) {
-        const matches = res.data.filter((t) =>
-          t.model.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        setSuggestions(matches.slice(0, 5));
-      } else {
-        setSuggestions([]);
-      }
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
     }
   };
 
+  const fetchSuggestions = async (input) => {
+    if (!input) {
+      setSuggestions([]);
+      return;
+    }
+
+    try {
+      const type = selectedBrand === "AUTOMATIC_VOLTAGE_STABILIZER" ? "STABILIZER" : undefined;
+      const params = { search: input, brand: selectedBrand || undefined, type };
+      const res = await axios.get("http://localhost:5000/api/tyres", { params });
+
+      // Extract unique model suggestions
+      const models = Array.from(new Set(res.data.map(t => t.model)));
+      setSuggestions(models.slice(0, 5));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onSearchChange = (e) => {
+    const val = e.target.value;
+    setSearchTerm(val);
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => fetchSuggestions(val), 300);
+  };
+
+  // On suggestion select: fetch tyres by exact model, clearing brand/type filters
+  const onSelectSuggestion = (model) => {
+    setSearchTerm(model);
+    setSuggestions([]);
+    fetchTyres("", model);
+    setSelectedBrand(""); 
+  };
+
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Tyre & Stabilizer Inventory</h1>
 
       <div className="flex gap-4 mb-6">
@@ -60,28 +81,24 @@ function App() {
             type="text"
             placeholder="Search by model..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={onSearchChange}
             className="border p-2 rounded w-full"
+            autoComplete="off"
           />
           {suggestions.length > 0 && (
-            <ul className="absolute bg-white border w-full mt-1 rounded shadow-lg z-10">
-              {suggestions.map((tyre) => (
+            <ul className="absolute bg-white border w-full mt-1 rounded shadow-lg z-10 max-h-48 overflow-auto">
+              {suggestions.map((model, i) => (
                 <li
-                  key={tyre._id}
+                  key={i}
                   className="p-2 hover:bg-gray-100 cursor-pointer"
-                  onClick={() => {
-                    setSearchTerm(tyre.model);
-                    setTyres([tyre]);
-                    setSuggestions([]);
-                  }}
+                  onClick={() => onSelectSuggestion(model)}
                 >
-                  {tyre.model}
+                  {model}
                 </li>
               ))}
             </ul>
           )}
         </div>
-
         <select
           value={selectedBrand}
           onChange={(e) => setSelectedBrand(e.target.value)}
