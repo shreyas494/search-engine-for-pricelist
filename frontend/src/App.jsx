@@ -43,33 +43,23 @@ function App() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Tyre Inventory - Real-time Search</h1>
+      <h1 className="text-2xl font-bold mb-4">
+        Tyre Inventory - Real-time Search
+      </h1>
 
       <form autoComplete="off" style={{ position: "relative" }}>
-        {/* Hidden inputs to trick browsers */}
-        <input
-          type="text"
-          name="fakeusernameremembered"
-          autoComplete="off"
-          style={{ display: "none" }}
-        />
-        <input
-          type="password"
-          name="fakepasswordremembered"
-          autoComplete="new-password"
-          style={{ display: "none" }}
-        />
-
         <input
           type="text"
           name="search_model_unique"
-          autoComplete="off"
+          autoComplete="new-password" // trick to disable Chrome suggestions
+          aria-autocomplete="none"
+          autoCorrect="off"
+          autoCapitalize="off"
           spellCheck="false"
           placeholder="Type to search by model..."
           value={searchTerm}
           onChange={onSearchChange}
           className="border p-2 rounded w-1/2"
-          // optionally add key to force React to remount on input reset:
           key="search-input"
         />
 
