@@ -27,11 +27,11 @@ const productSchema = new mongoose.Schema({
   warranty: String,
 });
 
-// ✅ Product Model
-const Product = mongoose.model("Product", productSchema);
+// ✅ Force model to use "tyres" collection
+const Product = mongoose.model("Product", productSchema, "tyres");
 
 // ✅ API Endpoint
-app.get("/api/products", async (req, res) => {
+app.get("/api/tyres", async (req, res) => {
   try {
     const { brand, type, search } = req.query;
     let query = {};

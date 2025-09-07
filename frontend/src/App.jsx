@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 
 function App() {
-  const [tyres, setTyres] = useState([]);
+  const [products, setProducts] = useState([]);
   const [brands, setBrands] = useState([]);
   const [selectedBrand, setSelectedBrand] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -10,18 +10,18 @@ function App() {
 
   useEffect(() => {
     if (searchTerm.trim() === "") {
-      fetchTyres(selectedBrand, "");
+      fetchProducts(selectedBrand, "");
     }
   }, [selectedBrand]);
 
-  const fetchTyres = async (brand = "", search = "") => {
+  const fetchProducts = async (brand = "", search = "") => {
     try {
       const params = {};
       if (brand) params.brand = brand;
       if (search) params.search = search;
 
       const res = await axios.get("http://localhost:5000/api/tyres", { params });
-      setTyres(res.data);
+      setProducts(res.data);
 
       if (brands.length === 0 && res.data.length > 0) {
         setBrands([...new Set(res.data.map((t) => t.brand))]);
@@ -37,20 +37,16 @@ function App() {
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      fetchTyres(selectedBrand, val);
+      fetchProducts(selectedBrand, val);
     }, 300);
   };
 
-  // Dynamic column order (preferred if exists)
-  const preferredColumns = ["brand", "model", "type", "rp", "rp1", "dp", "mrp"];
-  const columns =
-    tyres.length > 0
-      ? preferredColumns.filter((col) => col in tyres[0])
-      : [];
+  // ✅ Dynamically detect all keys in the first product
+  const columns = products.length > 0 ? Object.keys(products[0]).filter(k => k !== "_id" && k !== "__v") : [];
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Tyre Inventory - Real-time Search</h1>
+      <h1 className="text-2xl font-bold mb-4">Inventory - Real-time Search</h1>
 
       <form autoComplete="off" style={{ position: "relative" }}>
         <input
@@ -90,19 +86,19 @@ function App() {
           </tr>
         </thead>
         <tbody>
-          {tyres.length > 0 ? (
-            tyres.map((tyre, i) => (
+          {products.length > 0 ? (
+            products.map((item, i) => (
               <tr key={i}>
                 {columns.map((col) => (
                   <td key={col} className="border p-2">
-                    {tyre[col] ?? "-"}
+                    {item[col] ?? "-"}
                   </td>
                 ))}
                 <td className="border p-2">
                   <button
                     onClick={() =>
                       navigator.clipboard.writeText(
-                        columns.map((col) => `${col}: ${tyre[col] ?? "-"}`).join(" | ")
+                        columns.map((col) => `${col}: ${item[col] ?? "-"}`).join(" | ")
                       )
                     }
                     className="bg-blue-500 text-white px-2 py-1 rounded"
