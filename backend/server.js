@@ -6,25 +6,34 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// ✅ Connect to MongoDB Atlas
 mongoose
-  .connect("YOUR_MONGO_ATLAS_URL", { useNewUrlParser: true, useUnifiedTopology: true })
+  .connect("YOUR_MONGO_ATLAS_URL", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.error(err));
 
-const tyreSchema = new mongoose.Schema({
+// ✅ General Product Schema
+const productSchema = new mongoose.Schema({
   brand: String,
   model: String,
   type: String,
   dp: Number,
+  rp: Number,
+  rp1: Number,
   mrp: Number,
+  warranty: String,
 });
 
-const Tyre = mongoose.model("Tyre", tyreSchema);
+// ✅ Product Model
+const Product = mongoose.model("Product", productSchema);
 
-app.get("/api/tyres", async (req, res) => {
+// ✅ API Endpoint
+app.get("/api/products", async (req, res) => {
   try {
     const { brand, type, search } = req.query;
-
     let query = {};
 
     if (brand) query.brand = { $regex: new RegExp(`^${brand}$`, "i") };
@@ -33,12 +42,13 @@ app.get("/api/tyres", async (req, res) => {
 
     console.log("Backend Query:", query);
 
-    const tyres = await Tyre.find(query);
-    res.json(tyres);
+    const products = await Product.find(query);
+    res.json(products);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
+// ✅ Start Server
 const PORT = 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
