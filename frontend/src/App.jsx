@@ -41,30 +41,29 @@ function App() {
     }, 300);
   };
 
+  // Dynamic column order (preferred if exists)
+  const preferredColumns = ["brand", "model", "type", "rp", "rp1", "dp", "mrp"];
+  const columns =
+    tyres.length > 0
+      ? preferredColumns.filter((col) => col in tyres[0])
+      : [];
+
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">
-        Tyre Inventory - Real-time Search
-      </h1>
+    <div className="p-6 max-w-6xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Tyre Inventory - Real-time Search</h1>
 
       <form autoComplete="off" style={{ position: "relative" }}>
-        {/* Search Input with Chrome autocomplete disabled */}
         <input
-          type="search"
-          name="disable_autofill_" // random dummy name
+          type="text"
+          name="search_model_unique"
           autoComplete="off"
-          aria-autocomplete="none"
-          autoCorrect="off"
-          autoCapitalize="off"
           spellCheck="false"
-          placeholder="Type to search by model..."
+          placeholder="Search by model..."
           value={searchTerm}
           onChange={onSearchChange}
           className="border p-2 rounded w-1/2"
-          key="search-input"
         />
 
-        {/* Brand Dropdown */}
         <select
           value={selectedBrand}
           onChange={(e) => setSelectedBrand(e.target.value)}
@@ -79,32 +78,31 @@ function App() {
         </select>
       </form>
 
-      {/* Results Table */}
       <table className="w-full border mt-6">
         <thead>
           <tr className="bg-gray-200">
-            <th className="border p-2">Brand</th>
-            <th className="border p-2">Model</th>
-            <th className="border p-2">Type</th>
-            <th className="border p-2">DP</th>
-            <th className="border p-2">MRP</th>
+            {columns.map((col) => (
+              <th key={col} className="border p-2 uppercase">
+                {col}
+              </th>
+            ))}
             <th className="border p-2">Copy</th>
           </tr>
         </thead>
         <tbody>
           {tyres.length > 0 ? (
-            tyres.map((tyre) => (
-              <tr key={tyre._id}>
-                <td className="border p-2">{tyre.brand}</td>
-                <td className="border p-2">{tyre.model}</td>
-                <td className="border p-2">{tyre.type}</td>
-                <td className="border p-2">{tyre.dp}</td>
-                <td className="border p-2">{tyre.mrp}</td>
+            tyres.map((tyre, i) => (
+              <tr key={i}>
+                {columns.map((col) => (
+                  <td key={col} className="border p-2">
+                    {tyre[col] ?? "-"}
+                  </td>
+                ))}
                 <td className="border p-2">
                   <button
                     onClick={() =>
                       navigator.clipboard.writeText(
-                        `${tyre.brand} - ${tyre.model} - DP:${tyre.dp} - MRP:${tyre.mrp}`
+                        columns.map((col) => `${col}: ${tyre[col] ?? "-"}`).join(" | ")
                       )
                     }
                     className="bg-blue-500 text-white px-2 py-1 rounded"
@@ -116,7 +114,7 @@ function App() {
             ))
           ) : (
             <tr>
-              <td colSpan={6} className="border p-2 text-center">
+              <td colSpan={columns.length + 1} className="border p-2 text-center">
                 Data not found
               </td>
             </tr>
