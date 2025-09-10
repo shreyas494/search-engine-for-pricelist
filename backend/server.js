@@ -1,54 +1,67 @@
+// server.js
+import path from "path";
+import { fileURLToPath } from "url";
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 
+// --- For __dirname in ES module ---
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
+
+// --- Middleware ---
 app.use(cors());
 app.use(express.json());
 
-// ✅ Connect to MongoDB Atlas
-mongoose
-  .connect("YOUR_MONGO_ATLAS_URL", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => console.error(err));
+// --- MongoDB connection ---
+mongoose.connect("YOUR_MONGO_ATLAS_URL", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log("✅ MongoDB connected"))
+.catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// ✅ General Product Schema
-const productSchema = new mongoose.Schema({
+// --- Example Tyre Schema & Routes ---
+const tyreSchema = new mongoose.Schema({
   brand: String,
   model: String,
-  type: String,
   dp: Number,
-  rp: Number,
-  rp1: Number,
   mrp: Number,
-  warranty: String,
 });
 
-// ✅ Force model to use "tyres" collection
-const Product = mongoose.model("Product", productSchema, "tyres");
+const Tyre = mongoose.model("Tyre", tyreSchema);
 
-// ✅ API Endpoint
+// Get all tyres
 app.get("/api/tyres", async (req, res) => {
   try {
-    const { brand, type, search } = req.query;
-    let query = {};
-
-    if (brand) query.brand = { $regex: new RegExp(`^${brand}$`, "i") };
-    if (type) query.type = { $regex: new RegExp(`^${type}$`, "i") };
-    if (search) query.model = { $regex: search, $options: "i" };
-
-    console.log("Backend Query:", query);
-
-    const products = await Product.find(query);
-    res.json(products);
+    const tyres = await Tyre.find();
+    res.json(tyres);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Server error" });
   }
 });
 
-// ✅ Start Server
-const PORT = 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+// Add a new tyre
+app.post("/api/tyres", async (req, res) => {
+  try {
+    const newTyre = new Tyre(req.body);
+    const savedTyre = await newTyre.save();
+    res.json(savedTyre);
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// --- Serve frontend build ---
+app.use(express.static(path.join(__dirname, "../frontend/dist")));
+
+// All other requests return the frontend
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
+});
+
+// --- Start server ---
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
