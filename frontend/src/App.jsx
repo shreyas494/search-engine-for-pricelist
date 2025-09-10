@@ -6,6 +6,7 @@ function App() {
   const [brandFilter, setBrandFilter] = useState("");
   const [brands, setBrands] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
+  const [fields, setFields] = useState([]); // dynamically detected fields
 
   // ✅ Fetch brands for dropdown
   useEffect(() => {
@@ -23,7 +24,19 @@ function App() {
 
     fetch(`/api/tyres?${params.toString()}`)
       .then((res) => res.json())
-      .then((data) => setTyres(data))
+      .then((data) => {
+        setTyres(data);
+
+        // Determine all keys dynamically
+        if (data.length > 0) {
+          const allFields = Array.from(
+            new Set(data.flatMap((item) => Object.keys(item)))
+          ).filter((f) => f !== "_id" && f !== "__v"); // ignore internal fields
+          setFields(allFields);
+        } else {
+          setFields([]);
+        }
+      })
       .catch((err) => console.error("Error fetching tyres:", err));
   }, [brandFilter, searchTerm]);
 
@@ -43,15 +56,13 @@ function App() {
       .catch((err) => console.error("Error fetching suggestions:", err));
   }, [searchTerm, brandFilter]);
 
-  // ✅ Copy details
+  // ✅ Copy details dynamically
   const copyTyreDetails = (tyre) => {
-    const text = `Brand: ${tyre.brand}
-Model: ${tyre.model}
-Type: ${tyre.type}
-DP: ${tyre.dp}
-MRP: ${tyre.mrp}`;
+    const text = fields
+      .map((f) => `${f.charAt(0).toUpperCase() + f.slice(1)}: ${tyre[f]}`)
+      .join("\n");
     navigator.clipboard.writeText(text).then(() =>
-      alert("Tyre details copied to clipboard ✅")
+      alert("Product details copied to clipboard ✅")
     );
   };
 
@@ -103,23 +114,25 @@ MRP: ${tyre.mrp}`;
         <table className="min-w-full border border-gray-200">
           <thead className="bg-gray-100">
             <tr>
-              <th className="border p-2 text-left">Brand</th>
-              <th className="border p-2 text-left">Model</th>
-              <th className="border p-2 text-left">Type</th>
-              <th className="border p-2 text-left">DP</th>
-              <th className="border p-2 text-left">MRP</th>
-              <th className="border p-2 text-left">Copy</th>
+              {fields.map((field) => (
+                <th key={field} className="border p-2 text-left">
+                  {field.charAt(0).toUpperCase() + field.slice(1)}
+                </th>
+              ))}
+              {fields.length > 0 && (
+                <th className="border p-2 text-left">Copy</th>
+              )}
             </tr>
           </thead>
           <tbody>
             {tyres.length > 0 ? (
               tyres.map((tyre) => (
                 <tr key={tyre._id} className="hover:bg-gray-50">
-                  <td className="border p-2">{tyre.brand}</td>
-                  <td className="border p-2">{tyre.model}</td>
-                  <td className="border p-2">{tyre.type}</td>
-                  <td className="border p-2">{tyre.dp}</td>
-                  <td className="border p-2">{tyre.mrp}</td>
+                  {fields.map((field) => (
+                    <td key={field} className="border p-2">
+                      {tyre[field] || "-"}
+                    </td>
+                  ))}
                   <td className="border p-2">
                     <button
                       className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -133,10 +146,10 @@ MRP: ${tyre.mrp}`;
             ) : (
               <tr>
                 <td
-                  colSpan="6"
+                  colSpan={fields.length + 1 || 1}
                   className="border p-2 text-center text-gray-500"
                 >
-                  No tyres found
+                  No products found
                 </td>
               </tr>
             )}
