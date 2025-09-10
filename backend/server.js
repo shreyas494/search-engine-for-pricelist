@@ -16,14 +16,17 @@ app.use(cors());
 app.use(express.json());
 
 // --- MongoDB connection ---
-mongoose.connect("YOUR_MONGO_ATLAS_URL", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
+mongoose.connect(
+  "mongodb+srv://Harshal:Harshal123@cluster0.qvgyeqg.mongodb.net/tyreDB",
+  {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  }
+)
 .then(() => console.log("✅ MongoDB connected"))
-.catch((err) => console.error("❌ MongoDB connection error:", err));
+.catch(err => console.error("❌ MongoDB connection error:", err));
 
-// --- Example Tyre Schema & Routes ---
+// --- Tyre Schema & API Routes ---
 const tyreSchema = new mongoose.Schema({
   brand: String,
   model: String,
@@ -54,10 +57,9 @@ app.post("/api/tyres", async (req, res) => {
   }
 });
 
-// --- Serve frontend build ---
+// --- Serve frontend build (Vite + Tailwind) ---
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
-// All other requests return the frontend
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
 });
