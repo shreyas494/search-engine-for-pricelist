@@ -23,7 +23,6 @@ function App() {
       const res = await axios.get("http://localhost:5000/api/tyres", { params });
       setProducts(res.data);
 
-      // ✅ Populate brand dropdown only once
       if (brands.length === 0 && res.data.length > 0) {
         setBrands([...new Set(res.data.map((t) => t.brand))]);
       }
@@ -42,23 +41,13 @@ function App() {
     }, 300);
   };
 
-  // ✅ Collect all unique keys dynamically from all products
-  const columns =
-    products.length > 0
-      ? Array.from(
-          new Set(
-            products.flatMap((p) =>
-              Object.keys(p).filter((k) => k !== "_id" && k !== "__v")
-            )
-          )
-        )
-      : [];
+  // ✅ Dynamically detect all keys in the first product
+  const columns = products.length > 0 ? Object.keys(products[0]).filter(k => k !== "_id" && k !== "__v") : [];
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Inventory - Real-time Search</h1>
 
-      {/* Search + Brand filter */}
       <form autoComplete="off" style={{ position: "relative" }}>
         <input
           type="text"
@@ -85,7 +74,6 @@ function App() {
         </select>
       </form>
 
-      {/* Dynamic Table */}
       <table className="w-full border mt-6">
         <thead>
           <tr className="bg-gray-200">
@@ -110,9 +98,7 @@ function App() {
                   <button
                     onClick={() =>
                       navigator.clipboard.writeText(
-                        columns
-                          .map((col) => `${col}: ${item[col] ?? "-"}`)
-                          .join(" | ")
+                        columns.map((col) => `${col}: ${item[col] ?? "-"}`).join(" | ")
                       )
                     }
                     className="bg-blue-500 text-white px-2 py-1 rounded"

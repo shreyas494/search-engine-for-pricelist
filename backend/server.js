@@ -15,8 +15,17 @@ mongoose
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.error(err));
 
-// ✅ Flexible schema (no strict enforced fields)
-const productSchema = new mongoose.Schema({}, { strict: false });
+// ✅ General Product Schema
+const productSchema = new mongoose.Schema({
+  brand: String,
+  model: String,
+  type: String,
+  dp: Number,
+  rp: Number,
+  rp1: Number,
+  mrp: Number,
+  warranty: String,
+});
 
 // ✅ Force model to use "tyres" collection
 const Product = mongoose.model("Product", productSchema, "tyres");
